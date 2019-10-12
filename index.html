@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+	<link rel="stylesheet" href="js/bootstrap-4.1.1/css/bootstrap.min.css">
+	<link rel="stylesheet" href="js/jquery-ui/jquery-ui.min.css">
+	
+	<!-- Live.js is added only for auto refresh the pages during development stage of the project --> 
+	<!-- TODO : remove / comment this line during production rollout -->
+	<script type="text/javascript" src="http://livejs.com/live.js"></script>
+
+</head>
+<body>
+	<nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
+      <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">Real Move Waves</a>
+	  <ul class="navbar-nav px-1">
+        <li class="nav-item text-nowrap">
+          <a class="nav-link" href="#">Home</a>
+        </li>
+      </ul>
+	  <ul class="navbar-nav px-1">
+        <li class="nav-item text-nowrap">
+          <a class="nav-link" href="#">Charts</a>
+        </li>
+      </ul>
+	  <ul class="navbar-nav px-1">
+        <li class="nav-item text-nowrap">
+          <a class="nav-link" href="#">Alerts</a>
+        </li>
+      </ul>
+      <input id="scriptName" class="form-control form-control-dark w-50" type="text" placeholder="Enter stock name to search for...." onchange="getScriptName(this.value)" aria-label="Search">
+	  
+      <ul class="navbar-nav px-3">
+        <li class="nav-item text-nowrap">
+          <a class="nav-link" href="#">Sign out</a>
+        </li>
+      </ul>
+    </nav>
+
+<div class="container-fluid">
+	<div class="row"><div class="col col-lg-12"> - </div></div> <!-- This is a dummy row to make the gui look good --> 
+	<div class="row"><div class="col col-lg-12"> - </div></div> <!-- This is a dummy row to make the gui look good --> 
+	
+	<div class="row">		
+		<div class="col col-lg-10">
+			<!-- Content here -->
+			<!--center> Stocks </center>
+			<div class="ui-widget">	  
+			  <input id="scriptName" class="form-control" placeholder="Enter stock name to search for...." onchange="getScriptName(this.value)"/>	  
+			</div-->
+			<div id="chartContainer"></div>
+		</div>
+		<div class="col col-lg-2">
+			<div id="alertsContainer" class="row">
+				<ul>
+					<li><a href="#uptrend">UPTrend</a></li>
+					<li><a href="#downtrend">DownTrend</a></li>		
+				</ul>
+				
+					<div id="uptrend">						
+						
+					</div>
+					<div id="downtrend">
+							
+					</div>
+				</div>
+		</div>
+	</div>
+  
+</div>
+<!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+	<script src="js/jquery/jquery-3.3.1.min.js"></script>
+	<script src="js/jquery-ui/jquery-ui.min.js"></script>
+	<!--script src="js/popper/popper.min.js"></script-->
+	<script src="js/bootstrap-4.1.1/js/bootstrap.min.js"></script>
+	<script src="js/highcharts/highstock.js"></script>
+	<script src="js/highcharts/modules/exporting.js"></script>
+	
+	<!-- Icons -->
+	<script src="https://unpkg.com/feather-icons/dist/feather.min.js"></script>
+	
+	<script type="text/javascript">
+	
+	
+		//uptred , downtrend tab configurations
+		$( function() {
+			$( "#alertsContainer" ).tabs();
+		} );
+	
+		//Search field auto complete configurations
+		var availableTags = [
+		  "TCS","TCS_W","TCS_MS","TCS_3D",
+
+		  "Nifty"		  
+		];
+		
+		$( "#scriptName" ).autocomplete({
+		  source: availableTags
+		});
+	
+		//get the scriptName from url parameter scriptName
+		const urlParams = new URLSearchParams(window.location.search);			
+		var scriptName = urlParams.get('scriptName');
+		
+		var url = "";
+		
+		if(scriptName == undefined || scriptName == null){
+			alert("No script name provided in url params");
+		}
+		else {
+			getScriptName(scriptName)
+		}
+		
+		//console.log("URL :" + url);
+		// Configuration values will change if there is any change in the ohlc.json file
+		var highCandleColumnPosition = 7
+		var lowCandleColumnPosition = 8
+		
+		var highTitle = 2; 	// Position of high value in result set
+		var lowTitle = 3;	// Position of low value in result set
+		
+		//Chart attributes goes here
+		//TODO: This should be the name of the stock that is searched
+		
+		
+		function getChartName(scriptName) {
+			return scriptName.toUpperCase();
+		}
+		
+		var chartName = getChartName(scriptName);
+		
+		/*TODO: 
+		1. Enable and disable weekly, monthly, yearly grid lines on click of a button
+		2. 
+		*/
+		function getScriptName(scriptName) {
+			//alert("scriptName" + ":" + scriptName );
+			url = "data/" + scriptName.toUpperCase() +".json";
+			chartName = getChartName(scriptName);
+			
+			$.getJSON(url, function (data) {
+			
+				//Prepare low, high candle flags
+				var lowCandles = [];
+				var highCandles = [];
+
+				//Prepare low, high candle flags
+				var lowCandleZone = [];
+				var highCandleZone = [];
+				
+				var trendLine = [];
+				var lastObservedTrend = "";
+				var trendLinePercent = 1.9;
+				
+				for(i=0; i < data.length; i++) {
+					
+					// If the candle is High candle then add that for marking
+					if(data[i][highCandleColumnPosition] == "Y"){					
+						highCandles.push({ 
+										"x" 	: data[i][0],
+										"title" : data[i][highTitle],
+										"text"  : "High candle identified" + data[i][2]
+									});
+						highCandleZone
+						.push({'x': data[i][0], 'y': data[i][2]});
+						//trendLine.push({'x': data[i][0], 'y': (data[i][2] + (data[i][2] * trendLinePercent/100)) });
+						//Reversing the trendline to match the buy vs sell zone
+						trendLine.push({'x': data[i][0], 'y': (data[i][3] - (data[i][3] * trendLinePercent/100)) });
+						lastObservedTrend = "HIGH";
+					} // If the candle is Low candle then add that for marking
+					else if(data[i][lowCandleColumnPosition] == "Y") {					
+						lowCandles.push({ 
+										"x" 	: data[i][0],
+										"title" : data[i][lowTitle],
+										"text"  : " - Low candle identified and low price is " + data[i][3] 
+									});
+						highCandleZone.push({'x': data[i][0], 'y': data[i][3]});
+						//trendLine.push({'x': data[i][0], 'y': (data[i][3] - (data[i][3] * trendLinePercent/100)) });
+						//Reversing the trendline to match the buy vs sell zone
+						trendLine.push({'x': data[i][0], 'y': (data[i][2] + (data[i][2] * trendLinePercent/100)) });
+						lastObservedTrend = "LOW";
+					}
+					else {
+						if(lastObservedTrend == "HIGH") {
+							//trendLine.push({'x': data[i][0], 'y': (data[i][2] + (data[i][2] * trendLinePercent/100)) });
+							trendLine.push({'x': data[i][0], 'y': (data[i][3] - (data[i][3] * trendLinePercent/100)) });
+						}
+						else if(lastObservedTrend == "LOW") {
+							//trendLine.push({'x': data[i][0], 'y': (data[i][3] - (data[i][3] * trendLinePercent/100)) });
+							trendLine.push({'x': data[i][0], 'y': (data[i][2] + (data[i][2] * trendLinePercent/100)) });
+						}
+						else {
+							//trendLine.push({'x': data[i][0], 'y': (data[i][4] + (data[i][4] * trendLinePercent/100)) });
+							trendLine.push({'x': data[i][0], 'y': (data[i][4] + (data[i][4] * trendLinePercent/100)) });
+						}
+					}
+				}
+				
+				
+					// create the chart
+					
+					Highcharts.stockChart('chartContainer', {
+						chart: {
+							height: 600
+						},
+						//Range selector is used to show the data for last 1 month
+						rangeSelector: {
+							allButtonsEnabled: true,
+							selected: 0
+						},
+						plotOptions: {
+							 candlestick: {
+										color: 'red',
+										upColor: 'green',
+										downColor: 'red'										
+									}
+						},//x Axis grid lines 
+						xAxis: {
+								 gridLineWidth: 1,        
+								 startOfWeek: 1,
+								 gridLineDashStyle: 'longdash'
+						}, // Y Axis grid lines
+						yAxis: {
+							gridLineDashStyle: 'longdash'
+						},
+						title: {
+							text: chartName
+						},					
+						series: [{
+							type: 'candlestick',
+							name: chartName,
+							data: data,
+							id: "dataseries",
+							
+							dataGrouping: {
+								units: [
+										['day', [1] ]
+									/*[
+										'week', // unit name
+										[1, 2] // allowed multiples
+									], [
+										'month',
+										[1, 2, 3, 4, 5, 6]
+										]*/
+								]
+							}
+						}, 
+						{
+							type: 'flags',
+							data: lowCandles ,
+							onSeries: "dataseries",
+							shape: 'circlepin',						
+							width: 4,
+							fillColor: "#ff0000"
+						}, 
+						{
+							type: 'flags',
+							data: highCandles ,
+							onSeries: "dataseries",
+							shape: 'circlepin',
+							width: 4,
+							fillColor: "#00ff00"
+						}/*,
+						{
+							type: 'line',
+							data: highCandleZone,
+							color: 'blue'
+						}*/,
+						{
+							type: 'line',
+							data: trendLine,
+							color: 'orange'
+						}]
+					});
+			});
+		}
+		
+		//TODO: Creating alertcontainer contents
+		
+</script>
+</body>
+</html>
