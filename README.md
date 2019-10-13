@@ -2,28 +2,32 @@ Product Name
 
 Stock Market
 
-Url
+Website Url:
 
 http://charts.rablion.com
 
 Development Tools
 
-Language
+Language :
 
 Python
 
-#Install python pandas 
+#Install python pandas
+
 pip install pandas
 
 
 #Install firebase-admin
+
 pip install firebase-admin
 
 #install Postgres sql
+
 $ pip install psycopg2
 
 
 #Install SQLAlchemy
+
 pip install SQLAlchemy
 
 database connection:
@@ -55,7 +59,8 @@ if (not len(firebase_admin._apps)):
 
 Database
 
-1.postgres sql
+1.Postgres sql
   #Install postgres sql.
-2.google firebase
-  # Access Google firebase  account.
+2.Google firebase   # Access Google firebase  account.
+
+
